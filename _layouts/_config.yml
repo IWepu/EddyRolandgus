@@ -1,0 +1,6 @@
+title: "Eddyrolangus Archive"
+description: "Arsip Terlarang Teknik Lingkungan Udayana"
+baseurl: "" 
+url: "" 
+markdown: kramdown
+permalink: /:year/:month/:day/:title/
