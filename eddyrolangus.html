@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROJECT: EDDYROLANGUS_ARCHIVE</title>
+    <style>
+        /* GAYA VISUAL ABSURD & RETRO */
+        :root {
+            --bg-color: #0a0a0a;
+            --text-color: #39ff14; /* Neon Green */
+            --glitch-color: #ff00ff;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Courier New', Courier, monospace; /* Font ala terminal */
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Efek Layar CRT Tua (Garis-garis scan) */
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        #screen-container {
+            border: 2px solid var(--text-color);
+            padding: 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 0 20px var(--text-color);
+            animation: flicker 0.15s infinite;
+        }
+
+        h1 { text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }
+        .subtitle { font-size: 0.8rem; opacity: 0.7; margin-bottom: 30px; }
+
+        /* Area Output Terminal */
+        #output-log p { margin: 5px 0; line-height: 1.4; }
+        .system-msg { color: #ffff00; } /* Pesan sistem warna kuning */
+        .error-msg { color: #ff3333; font-weight: bold;} /* Pesan error warna merah */
+        .hidden-clue { cursor: pointer; border-bottom: 1px dotted var(--text-color); }
+        .hidden-clue:hover { background-color: var(--text-color); color: var(--bg-color); }
+
+        /* Area Input Terminal */
+        #input-area {
+            display: flex;
+            margin-top: 20px;
+            border-top: 1px dashed var(--text-color);
+            padding-top: 10px;
+        }
+        #prompt { margin-right: 10px; }
+        #command-input {
+            flex-grow: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 1.1rem;
+            outline: none;
+        }
+
+        /* Animasi Kedipan Layar */
+        @keyframes flicker {
+            0% { opacity: 0.9; }
+            50% { opacity: 1; }
+            100% { opacity: 0.95; }
+        }
+        
+        /* Teks Glitch untuk Judul */
+        .glitch-text {
+            position: relative;
+            animation: glitch-skew 1s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-skew {
+            0% { transform: skew(1deg); }
+            20% { transform: skew(-1deg); }
+            40% { transform: skew(2deg); }
+            60% { transform: skew(-2deg); }
+            80% { transform: skew(3deg); }
+            100% { transform: skew(-2deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="screen-container">
+    <h1><span class="glitch-text">DATABASE</span> TEKNIK LINGKUNGAN UNUD</h1>
+    <div class="subtitle">STATUS: CORRUPTED // ARSIP ILEGAL // AKSES DIBATASI</div>
+    
+    <div id="output-log">
+        </div>
+
+    <div id="input-area">
+        <span id="prompt">GHOST_USER@TL-UNUD:~$</span>
+        <input type="text" id="command-input" placeholder="Ketik perintah..." autofocus>
+    </div>
+</div>
+
+<script>
+    const outputLog = document.getElementById('output-log');
+    const commandInput = document.getElementById('command-input');
+    const bootSound = new Audio('https://www.soundjay.com/button/beep-07.wav'); // Suara beep sederhana
+
+    // --- DATABASE JAWABAN TEKA-TEKI ---
+    // Ini adalah otak dari teka-teki. Kunci = kata yang diketik user, Nilai = jawaban sistem.
+    const responses = {
+        "siapa": "Pertanyaan tidak valid. Subjek tidak terdaftar dalam Sistem Informasi Akademik manapun. Tapi dia ada di setiap daftar pustaka sejak tahun 1998.",
+        "eddy": "ERROR 404: Nama 'Eddy' terlalu umum. Apakah maksud Anda: <span class='hidden-clue' onclick='revealEddy()'>[DATA_DIHAPUS_01]</span>?",
+        "eddyrolangus": "PERINGATAN: Anda mencoba mengakses file terlarang 'Tesis Hantu'. Sistem mencatat IP Anda. Dia yang menulis segalanya, tapi tidak pernah menghadiri satu kelas pun.",
+        "referensi": "Memindai perpustakaan TL UNUD... Ditemukan 14,500 sitasi. Penulis asli: [KOSONG]. Semua dosen mengklaim itu tulisan mereka. Mereka berbohong.",
+        "lingkungan": "Lingkungan kampus ini... terasa mengawasi. Ada jejak karbon digital yang tidak masuk akal di server gedung pascasarjana.",
+        "udayana": "Universitas Udayana. Tempat yang indah. Tempat yang sempurna untuk bersembunyi di depan mata. Dia adalah 'wisdom' yang terlupakan di logo universitas.",
+        "help": "Perintah yang tersedia: [TIDAK ADA]. Gunakan intuisi Anda. Cari tahu siapa dia.",
+        "author": "Dia bukan author. Dia adalah Origin.",
+    };
+
+    // Fungsi untuk mengetik teks secara perlahan (efek retro)
+    function typeWriter(text, elementClass = '') {
+        const p = document.createElement('p');
+        if (elementClass) p.classList.add(elementClass);
+        outputLog.appendChild(p);
+        
+        let i = 0;
+        const speed = 30; // Kecepatan mengetik
+        function typing() {
+            if (i < text.length) {
+                // Cek jika ada HTML di dalam teks (untuk fitur hidden clue)
+                if (text.substring(i).startsWith('<span')) {
+                    let spanEnd = text.indexOf('</span>', i) + 7;
+                    p.innerHTML += text.substring(i, spanEnd);
+                    i = spanEnd;
+                } else {
+                    p.innerHTML += text.charAt(i);
+                    i++;
+                }
+                outputLog.scrollTop = outputLog.scrollHeight; // Auto scroll ke bawah
+                setTimeout(typing, speed);
+            }
+        }
+        typing();
+    }
+
+    // Fungsi Event Listener untuk Input
+    commandInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            const command = commandInput.value.toLowerCase().trim();
+            
+            // Menampilkan apa yang diketik user
+            typeWriter(`> ${commandInput.value}`, 'system-msg');
+            commandInput.value = ''; // Kosongkan input
+
+            // Cek jawaban di database
+            setTimeout(() => {
+                 if (responses[command]) {
+                    // Jika ada di database
+                    typeWriter(responses[command]);
+                    try { bootSound.play(); } catch(e) {}
+                } else if (command === "") {
+                     typeWriter("Menunggu input...", "error-msg");
+                }
+                else {
+                    // Jawaban default jika tidak dikenali
+                    const errors = [
+                        "Perintah tidak dikenal. Sistem mulai tidak stabil.",
+                        "Akses ditolak. Apakah Anda salah satu dosen yang 'meminjam' karyanya?",
+                        "Data korup di sektor 7G. Coba kata kunci lain yang relevan dengan kampusnya.",
+                        "SYNTAX ERROR. Dia tertawa melihat Anda mencoba."
+                    ];
+                    const randomError = errors[Math.floor(Math.random() * errors.length)];
+                    typeWriter(randomError, 'error-msg');
+                }
+            }, 500); // Sedikit delay agar terasa seperti komputer mikir
+        }
+    });
+
+    // Pesan Pembuka Saat Website Dimuat
+    window.onload = function() {
+        setTimeout(() => {
+            typeWriter("MEMULAI SISTEM...", "system-msg");
+        }, 500);
+        setTimeout(() => {
+            typeWriter("MENGHUBUNGKAN KE SERVER BAWAH TANAH TL UNUD... BERHASIL.", "system-msg");
+        }, 1500);
+        setTimeout(() => {
+            typeWriter("PERINGATAN: Ditemukan anomali data. Seorang mahasiswa yang tidak tercatat menciptakan 99% referensi skripsi di sini. Temukan namanya.", "error-msg");
+            typeWriter("---------------------------------------------------");
+        }, 3000);
+    }
+
+    // Fungsi Rahasia (Easter Egg) saat teks tertentu diklik
+    function revealEddy() {
+        outputLog.innerHTML = ""; // Hapus layar
+        document.body.style.backgroundColor = "#fff"; // Layar jadi putih sebentar (flash)
+        setTimeout(() => {
+             document.body.style.backgroundColor = "var(--bg-color)";
+             typeWriter("SYSTEM OVERRIDE.", "error-msg");
+             typeWriter("NAMA LENGKAP: E D D Y R O L A N G U S.", "glitch-text");
+             typeWriter("Status: Mahasiswa Abadi. Pencipta Referensi. Hantu Teknik Lingkungan Udayana. Dia melihat kita sekarang.");
+        }, 200);
+    }
+
+    // Agar input selalu fokus jika layar diklik
+    document.getElementById('screen-container').addEventListener('click', () => {
+        commandInput.focus();
+    });
+
+</script>
+
+</body>
+</html>
