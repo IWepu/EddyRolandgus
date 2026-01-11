@@ -1,7 +1,8 @@
 title: "Eddyrolangus Archive"
 description: "Arsip Terlarang Teknik Lingkungan Udayana"
-baseurl: "EddyRolandgus" 
+baseurl: "/EddyRolandgus" 
 url: "" 
 markdown: kramdown
 
 permalink: /:year/:month/:day/:title/
+
